@@ -43,6 +43,7 @@ class ModelEvaluationArtifact:
     trained_model_path: str
     # Added evaluation report path
     evaluation_report_path: str
+    model_config: dict
 
 @dataclass
 class ModelPusherArtifact:

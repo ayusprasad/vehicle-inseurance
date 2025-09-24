@@ -23,6 +23,7 @@ class DataTransformation:
             self.data_transformation_config = data_transformation_config
             self.data_validation_artifact = data_validation_artifact
             self._schema_config = read_yaml_file(file_path=SCHEMA_FILE_PATH)
+            self.expected_columns = None  # Store expected column structure
         except Exception as e:
             raise MyException(e, sys)
 
@@ -35,9 +36,7 @@ class DataTransformation:
 
     def get_data_transformer_object(self) -> Pipeline:
         """
-        Creates and returns a data transformer object for the data, 
-        including gender mapping, dummy variable creation, column renaming,
-        feature scaling, and type adjustments.
+        Creates and returns a data transformer object for the data
         """
         logging.info("Entered get_data_transformer_object method of DataTransformation class")
 
@@ -58,7 +57,7 @@ class DataTransformation:
                     ("StandardScaler", numeric_transformer, num_features),
                     ("MinMaxScaler", min_max_scaler, mm_columns)
                 ],
-                remainder='passthrough'  # Leaves other columns as they are
+                remainder='passthrough'
             )
 
             # Wrapping everything in a single pipeline
@@ -77,22 +76,48 @@ class DataTransformation:
         df['Gender'] = df['Gender'].map({'Female': 0, 'Male': 1}).astype(int)
         return df
 
-    def _create_dummy_columns(self, df):
+    def _create_dummy_columns(self, df, reference_columns=None):
         """Create dummy variables for categorical features."""
         logging.info("Creating dummy variables for categorical features")
-        df = pd.get_dummies(df, drop_first=True)
+        
+        # Get categorical columns that need dummies
+        categorical_columns = ['Vehicle_Age', 'Vehicle_Damage']
+        
+        # Create dummies
+        df = pd.get_dummies(df, columns=categorical_columns, drop_first=True)
+        
+        # If reference columns are provided, ensure all expected columns exist
+        if reference_columns is not None:
+            for col in reference_columns:
+                if col not in df.columns:
+                    df[col] = 0  # Add missing column with zeros
+            
+            # Reorder columns to match reference
+            df = df[reference_columns]
+        
         return df
 
     def _rename_columns(self, df):
         """Rename specific columns and ensure integer types for dummy columns."""
         logging.info("Renaming specific columns and casting to int")
-        df = df.rename(columns={
+        
+        # Define column mapping
+        column_mapping = {
             "Vehicle_Age_< 1 Year": "Vehicle_Age_lt_1_Year",
-            "Vehicle_Age_> 2 Years": "Vehicle_Age_gt_2_Years"
-        })
-        for col in ["Vehicle_Age_lt_1_Year", "Vehicle_Age_gt_2_Years", "Vehicle_Damage_Yes"]:
-            if col in df.columns:
-                df[col] = df[col].astype('int')
+            "Vehicle_Age_> 2 Years": "Vehicle_Age_gt_2_Years",
+            "Vehicle_Damage_Yes": "Vehicle_Damage_Yes"
+        }
+        
+        # Rename columns that exist
+        df = df.rename(columns={k: v for k, v in column_mapping.items() if k in df.columns})
+        
+        # Ensure expected columns exist
+        expected_dummy_columns = ["Vehicle_Age_lt_1_Year", "Vehicle_Age_gt_2_Years", "Vehicle_Damage_Yes"]
+        for col in expected_dummy_columns:
+            if col not in df.columns:
+                df[col] = 0  # Add missing column with default value
+            df[col] = df[col].astype('int')
+            
         return df
 
     def _drop_id_column(self, df):
@@ -100,6 +125,20 @@ class DataTransformation:
         logging.info("Dropping 'id' column")
         if "_id" in df.columns:
             df = df.drop("_id", axis=1)
+        return df
+
+    def _ensure_consistent_columns(self, df, reference_columns):
+        """Ensure DataFrame has consistent columns with reference."""
+        missing_cols = set(reference_columns) - set(df.columns)
+        extra_cols = set(df.columns) - set(reference_columns)
+        
+        # Add missing columns with default values
+        for col in missing_cols:
+            df[col] = 0
+            
+        # Remove extra columns
+        df = df[reference_columns]
+        
         return df
 
     def initiate_data_transformation(self) -> DataTransformationArtifact:
@@ -116,6 +155,9 @@ class DataTransformation:
             test_df = self.read_data(file_path=self.data_ingestion_artifact.test_file_path)
             logging.info("Train-Test data loaded")
 
+            # Store original column structure for reference
+            original_columns = train_df.columns.tolist()
+
             input_feature_train_df = train_df.drop(columns=[TARGET_COLUMN], axis=1)
             target_feature_train_df = train_df[TARGET_COLUMN]
 
@@ -123,45 +165,69 @@ class DataTransformation:
             target_feature_test_df = test_df[TARGET_COLUMN]
             logging.info("Input and Target cols defined for both train and test df.")
 
-            # Apply custom transformations in specified sequence
+            # Apply custom transformations to training data first
             input_feature_train_df = self._map_gender_column(input_feature_train_df)
             input_feature_train_df = self._drop_id_column(input_feature_train_df)
             input_feature_train_df = self._create_dummy_columns(input_feature_train_df)
             input_feature_train_df = self._rename_columns(input_feature_train_df)
+            
+            # Store the column structure from training data
+            self.expected_columns = input_feature_train_df.columns.tolist()
+            logging.info(f"Expected columns structure: {self.expected_columns}")
 
+            # Apply same transformations to test data using training data as reference
             input_feature_test_df = self._map_gender_column(input_feature_test_df)
             input_feature_test_df = self._drop_id_column(input_feature_test_df)
-            input_feature_test_df = self._create_dummy_columns(input_feature_test_df)
+            input_feature_test_df = self._create_dummy_columns(input_feature_test_df, self.expected_columns)
             input_feature_test_df = self._rename_columns(input_feature_test_df)
+            input_feature_test_df = self._ensure_consistent_columns(input_feature_test_df, self.expected_columns)
+            
             logging.info("Custom transformations applied to train and test data")
+            logging.info(f"Train shape: {input_feature_train_df.shape}, Test shape: {input_feature_test_df.shape}")
 
             logging.info("Starting data transformation")
             preprocessor = self.get_data_transformer_object()
             logging.info("Got the preprocessor object")
 
+            # Transform data
             logging.info("Initializing transformation for Training-data")
             input_feature_train_arr = preprocessor.fit_transform(input_feature_train_df)
             logging.info("Initializing transformation for Testing-data")
             input_feature_test_arr = preprocessor.transform(input_feature_test_df)
+            
+            # Ensure we're working with numpy arrays
+            from scipy import sparse
+            if sparse.issparse(input_feature_train_arr):
+                input_feature_train_arr = input_feature_train_arr.toarray()
+            if sparse.issparse(input_feature_test_arr):
+                input_feature_test_arr = input_feature_test_arr.toarray()
+                
             logging.info("Transformation done end to end to train-test df.")
 
             logging.info("Applying SMOTEENN for handling imbalanced dataset.")
-            smt = SMOTEENN(sampling_strategy="minority")
-            input_feature_train_final, target_feature_train_final, *_ = smt.fit_resample(
-                input_feature_train_arr, target_feature_train_df
-            )
-            input_feature_test_final, target_feature_test_final, *_ = smt.fit_resample(
-                input_feature_test_arr, target_feature_test_df
-            )
-            logging.info("SMOTEENN applied to train-test df.")
+            smt = SMOTEENN(sampling_strategy="minority", random_state=42)
+            
+            # Use fit_resample only on training data
+            resample_result = smt.fit_resample(input_feature_train_arr, target_feature_train_df)
+            input_feature_train_final, target_feature_train_final = resample_result[:2]
+            
+            # For test data, we don't apply SMOTEENN as it's for evaluation
+            input_feature_test_final, target_feature_test_final = input_feature_test_arr, target_feature_test_df
+            logging.info("SMOTEENN applied to train data only.")
 
             train_arr = np.c_[input_feature_train_final, np.array(target_feature_train_final)]
             test_arr = np.c_[input_feature_test_final, np.array(target_feature_test_final)]
             logging.info("feature-target concatenation done for train-test df.")
 
+            # Save objects
             save_object(self.data_transformation_config.transformed_object_file_path, preprocessor)
             save_numpy_array_data(self.data_transformation_config.transformed_train_file_path, array=train_arr)
             save_numpy_array_data(self.data_transformation_config.transformed_test_file_path, array=test_arr)
+            
+            # Also save the expected column structure
+            column_structure_path = self.data_transformation_config.transformed_object_file_path.replace('.pkl', '_columns.pkl')
+            save_object(column_structure_path, self.expected_columns)
+            
             logging.info("Saving transformation object and transformed files.")
 
             logging.info("Data transformation completed successfully")

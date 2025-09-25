@@ -1,4 +1,5 @@
 import sys
+import os  # ADD THIS IMPORT
 from typing import Tuple
 
 import numpy as np
@@ -91,7 +92,7 @@ class ModelTrainer:
             # Check expected accuracy
             train_accuracy = accuracy_score(train_arr[:, -1], trained_model.predict(train_arr[:, :-1]))
             if train_accuracy < self.model_trainer_config.expected_accuracy:
-                msg = (f"Model accuracy {train_accuracy:.4f} is belowdf the base score "
+                msg = (f"Model accuracy {train_accuracy:.4f} is below the base score "
                        f"{self.model_trainer_config.expected_accuracy}")
                 logging.error(msg)
                 raise MyException(msg, sys)

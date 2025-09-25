@@ -69,9 +69,11 @@ class ModelEvaluationConfig:
 class ModelPusherConfig:
     bucket_name: str = MODEL_BUCKET_NAME
     s3_model_key_path: str = MODEL_FILE_NAME
+    bucket_name: str = "vehicle-insurance-models-ayush" 
 
+   
 @dataclass
 class VehiclePredictorConfig:
-    model_file_path: str = MODEL_FILE_NAME
+    model_file_path: str = os.path.join("artifact", "latest_model", MODEL_FILE_NAME)
     model_bucket_name: str = MODEL_BUCKET_NAME
-    preprocessing_object_path: str = PREPROCSSING_OBJECT_FILE_NAME
+    preprocessing_object_path: str = os.path.join("artifact", "latest_model", PREPROCSSING_OBJECT_FILE_NAME)

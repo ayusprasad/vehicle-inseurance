@@ -27,6 +27,9 @@ from src.entity.artifact_entity import ModelTrainerArtifact
 from src.entity.artifact_entity import ModelEvaluationArtifact
 from src.entity.artifact_entity import ModelPusherArtifact
 
+# ADD THIS IMPORT
+from src.pipline.setup_prediction import setup_latest_model
+
 class TrainPipeline:
     def __init__(self):
         self.data_ingestion_config = DataIngestionConfig()
@@ -104,7 +107,7 @@ class TrainPipeline:
              model_eval_config=self.model_evaluation_config,
              data_ingestion_artifact=data_ingestion_artifact,
              model_trainer_artifact=model_trainer_artifact,
-                data_transformation_artifact=data_transformation_artifact  # Add this line
+                data_transformation_artifact=data_transformation_artifact
             )
             model_evaluation_artifact = model_evaluation.initiate_model_evaluation()
             return model_evaluation_artifact
@@ -172,6 +175,13 @@ class TrainPipeline:
             model_pusher_artifact = self.start_model_pusher(
                 model_evaluation_artifact=model_evaluation_artifact
             )
+            
+            # ADD THIS: Set up the latest model for prediction
+            logging.info("Setting up latest model for prediction...")
+            if setup_latest_model():
+                logging.info("Prediction model setup completed successfully!")
+            else:
+                logging.warning("Failed to set up prediction model")
             
             logging.info("Training pipeline completed successfully!")
             return model_pusher_artifact

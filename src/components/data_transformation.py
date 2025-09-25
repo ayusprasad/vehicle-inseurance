@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import os
 import pandas as pd
 from imblearn.combine import SMOTEENN
 from sklearn.pipeline import Pipeline
@@ -141,6 +142,26 @@ class DataTransformation:
         
         return df
 
+    def save_preprocessor(self, preprocessor):
+        """Save preprocessor to the standard location"""
+        try:
+            # FIXED: Use the correct attribute name - data_transformation_dir
+            main_path = os.path.join(self.data_transformation_config.data_transformation_dir, "preprocessor.pkl")
+            
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(main_path), exist_ok=True)
+            save_object(main_path, preprocessor)
+            logging.info(f"Preprocessor saved at: {main_path}")
+            
+            # Also save to transformed_object directory for compatibility
+            object_dir = os.path.dirname(self.data_transformation_config.transformed_object_file_path)
+            os.makedirs(object_dir, exist_ok=True)
+            save_object(self.data_transformation_config.transformed_object_file_path, preprocessor)
+            logging.info(f"Preprocessor also saved at: {self.data_transformation_config.transformed_object_file_path}")
+            
+        except Exception as e:
+            raise MyException(e, sys) from e
+
     def initiate_data_transformation(self) -> DataTransformationArtifact:
         """
         Initiates the data transformation component for the pipeline.
@@ -208,8 +229,9 @@ class DataTransformation:
             smt = SMOTEENN(sampling_strategy="minority", random_state=42)
             
             # Use fit_resample only on training data
-            resample_result = smt.fit_resample(input_feature_train_arr, target_feature_train_df)
-            input_feature_train_final, target_feature_train_final = resample_result[:2]
+            input_feature_train_final, target_feature_train_final = smt.fit_resample(
+                input_feature_train_arr, target_feature_train_df
+            )
             
             # For test data, we don't apply SMOTEENN as it's for evaluation
             input_feature_test_final, target_feature_test_final = input_feature_test_arr, target_feature_test_df
@@ -219,8 +241,8 @@ class DataTransformation:
             test_arr = np.c_[input_feature_test_final, np.array(target_feature_test_final)]
             logging.info("feature-target concatenation done for train-test df.")
 
-            # Save objects
-            save_object(self.data_transformation_config.transformed_object_file_path, preprocessor)
+            # Save objects using the new method
+            self.save_preprocessor(preprocessor)
             save_numpy_array_data(self.data_transformation_config.transformed_train_file_path, array=train_arr)
             save_numpy_array_data(self.data_transformation_config.transformed_test_file_path, array=test_arr)
             

@@ -1,9 +1,13 @@
 import boto3
+import os
 
-# Set your credentials
-aws_access_key = "AKIA6ODU6E5QX5PYHHGM"
-aws_secret_key = "nbYTQRZ+6kGj9jA+KRj79stXa/uWpieTpYFoiK5F"
+# Get credentials from environment variables
+aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
+aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 bucket_name = "vehicle-insurance-models"
+
+if not aws_access_key or not aws_secret_key:
+    raise Exception("AWS credentials not found in environment variables.")
 
 # Create S3 client
 s3 = boto3.client(
@@ -15,7 +19,6 @@ s3 = boto3.client(
 
 # Create bucket - FIXED: No LocationConstraint for us-east-1
 try:
-    # For us-east-1, don't specify LocationConstraint
     s3.create_bucket(Bucket=bucket_name)
     print(f"Bucket {bucket_name} created successfully in us-east-1!")
     

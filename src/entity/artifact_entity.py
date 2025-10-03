@@ -45,4 +45,4 @@ class ModelEvaluationArtifact:
 class ModelPusherArtifact:
     bucket_name: str
     s3_model_path: str
-    model_version: str
+    model_version: str= "v1.0"

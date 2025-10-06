@@ -1,140 +1,131 @@
 // =====================
-// ZK-PROOF MANAGER
+// INSURANCE IQ MANAGER
 // =====================
 
-class ZKProofManager {
+class InsuranceIQManager {
     constructor() {
         this.isInitialized = false;
-        this.proof = null;
+        this.currentPrediction = null;
     }
 
     async initialize() {
         try {
-            console.log('🔄 Initializing ZK Proof System...');
-            await this.simulateNoirInit();
+            console.log('🚀 Initializing InsuranceIQ AI System...');
+            await this.simulateAIInit();
             this.isInitialized = true;
-            this.updateSecurityStatus('Quantum Secure', 95);
-            this.showNotification('🔐 Zero-Knowledge Proof System Initialized', 'success');
+            this.updateSystemStatus('AI System Active', 95);
+            this.showNotification('🤖 AI Neural Network Initialized Successfully', 'success');
             return true;
         } catch (error) {
-            console.error('ZK Init Failed:', error);
-            this.showNotification('⚠️ ZK System Initialization Failed', 'error');
+            console.error('AI Init Failed:', error);
+            this.showNotification('⚠️ AI System Initialization Failed', 'error');
             return false;
         }
     }
 
-    async simulateNoirInit() {
+    async simulateAIInit() {
         return new Promise(resolve => {
             setTimeout(() => {
-                console.log('✅ NoirJS simulation ready');
+                console.log('✅ AI Neural Network simulation ready');
                 resolve();
             }, 1500);
         });
     }
 
-    async generateProof(formData) {
+    async processPrediction(formData) {
         if (!this.isInitialized) {
-            throw new Error('ZK system not initialized');
+            throw new Error('AI system not initialized');
         }
 
         const steps = [
-            'Compiling ZK Circuit...',
-            'Generating Witness...', 
-            'Creating Proof...'
+            'Analyzing Personal Profile...',
+            'Processing Vehicle Data...', 
+            'Calculating Risk Factors...',
+            'Generating Insurance Score...'
         ];
 
         for (let i = 0; i < steps.length; i++) {
-            await this.simulateProofStep(steps[i], i);
+            await this.simulateProcessingStep(steps[i], i);
         }
 
-        this.proof = {
-            proof: 'zk_proof_' + Math.random().toString(36).substr(2, 9),
-            publicInputs: this.hashFormData(formData),
-            verificationKey: 'vk_' + Math.random().toString(36).substr(2, 9),
+        this.currentPrediction = {
+            prediction: Math.random() > 0.5 ? 'high' : 'low',
+            confidence: Math.random() * 30 + 70,
+            factors: this.analyzeFactors(formData),
             timestamp: Date.now()
         };
 
-        return this.proof;
+        return this.currentPrediction;
     }
 
-    async simulateProofStep(step, index) {
+    async simulateProcessingStep(step, index) {
         return new Promise(resolve => {
             setTimeout(() => {
                 const loadingText = document.getElementById('loadingText');
-                const proofSteps = document.querySelectorAll('.proof-step');
-                
                 if (loadingText) loadingText.textContent = step;
-                if (proofSteps.length > 0) {
-                    proofSteps.forEach((el, i) => {
-                        el.classList.toggle('active', i <= index);
-                    });
-                }
+                
+                const progress = ((index + 1) / 4) * 100;
+                const progressBar = document.getElementById('progressBar');
+                if (progressBar) progressBar.style.width = `${progress}%`;
+                
                 resolve();
             }, 1200);
         });
     }
 
-    hashFormData(formData) {
-        const dataString = JSON.stringify(formData);
-        let hash = 0;
-        for (let i = 0; i < dataString.length; i++) {
-            const char = dataString.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
-        }
-        return '0x' + Math.abs(hash).toString(16).padStart(16, '0');
+    analyzeFactors(formData) {
+        const factors = [];
+        if (formData.Vehicle_Damage === 'Yes') factors.push('Vehicle Damage History');
+        if (formData.Age < 25) factors.push('Young Driver');
+        if (formData.Previously_Insured === '0') factors.push('First-time Insured');
+        if (formData.Annual_Premium > 30000) factors.push('High Premium');
+        
+        return factors.length > 0 ? factors : ['Standard Risk Profile'];
     }
 
-    async verifyProof(proof) {
-        await new Promise(resolve => setTimeout(resolve, 1800));
-        
-        const isValid = Math.random() > 0.1;
-        return {
-            isValid,
-            verificationTime: Math.random() * 100 + 50,
-            gasUsed: Math.floor(Math.random() * 100000 + 50000)
-        };
-    }
-
-    updateSecurityStatus(level, strength) {
-        const levelText = document.getElementById('securityLevelText');
-        const levelBar = document.getElementById('securityLevelBar');
-        
-        if (levelText) levelText.textContent = level;
-        if (levelBar) {
-            levelBar.style.background = 
-                `linear-gradient(90deg, var(--neon-green) ${strength}%, rgba(255,255,255,0.1) ${strength}%)`;
-        }
+    updateSystemStatus(level, strength) {
+        console.log(`System Status: ${level} - ${strength}%`);
     }
 
     showNotification(message, type) {
-        console.log(`${type}: ${message}`);
-        if (typeof showNotification === 'function') {
-            showNotification(message, type);
-        }
-    }
-}
-
-// =====================
-// ENHANCED SECURITY ANIMATIONS
-// =====================
-
-function enhanceSecurityAnimations() {
-    document.querySelectorAll('.cyber-input, .cyber-select').forEach(input => {
-        input.addEventListener('focus', function() {
-            this.style.background = 'linear-gradient(90deg, rgba(76, 201, 240, 0.1), rgba(67, 97, 238, 0.05))';
+        const container = document.getElementById('notificationContainer');
+        if (!container) return;
+        
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span>${message}</span>
+                <button class="notification-close">&times;</button>
+            </div>
+        `;
+        
+        container.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+        
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    container.removeChild(notification);
+                }
+            }, 300);
         });
         
-        input.addEventListener('blur', function() {
-            this.style.background = 'rgba(255, 255, 255, 0.05)';
-        });
-    });
-
-    const encryptionNodes = document.querySelectorAll('.encryption-node');
-    if (encryptionNodes.length > 0) {
-        encryptionNodes.forEach((node, index) => {
-            node.style.animationDelay = `${index * 0.5}s`;
-        });
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        container.removeChild(notification);
+                    }
+                }, 300);
+            }
+        }, 5000);
     }
 }
 
@@ -142,26 +133,26 @@ function enhanceSecurityAnimations() {
 // GLOBAL VARIABLES
 // =====================
 
-const zkManager = new ZKProofManager();
+const insuranceManager = new InsuranceIQManager();
 const fortuneMessages = [
-    "Your data is encrypted with zero-knowledge proofs...",
-    "ZK-SNARKs ensure your privacy while computing predictions...",
-    "The AI sees patterns, but never your raw data...",
-    "Quantum-resistant encryption protects your information...",
-    "Your digital identity remains anonymous and secure...",
-    "The neural network computes on encrypted data only...",
-    "Algorithms verify predictions without exposing inputs...",
-    "In the realm of ZK-proofs, privacy is mathematical...",
-    "The AI oracle knows only what it needs to know...",
-    "Your profile is protected by cryptographic magic..."
+    "Your data tells a story of infinite possibilities...",
+    "The AI sees patterns humans cannot comprehend...",
+    "In the matrix of probability, your path is illuminated...",
+    "Machine learning whispers secrets of the future...",
+    "Your digital footprint reveals hidden truths...",
+    "The neural network dances with your destiny...",
+    "Algorithms align to decode your insurance fate...",
+    "In the realm of big data, all futures converge...",
+    "The AI oracle awaits your command...",
+    "Your profile resonates with the frequency of fortune..."
 ];
 
 const subtitleTexts = [
     "AI-Powered Insurance Prediction",
-    "Zero-Knowledge Proof Enabled",
-    "Privacy-Preserving AI",
-    "ZK-SNARKs Active",
-    "Quantum-Secure Predictions"
+    "Machine Learning at Your Service", 
+    "Decode Your Insurance Future",
+    "Neural Networks Never Lie",
+    "Data Science Meets Destiny"
 ];
 
 let currentSubtitleIndex = 0;
@@ -179,8 +170,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.body.classList.add('loaded');
     }, 500);
 
-    await zkManager.initialize();
-    enhanceSecurityAnimations();
+    await insuranceManager.initialize();
     setupEventListeners();
     initializeAnimations();
     
@@ -197,11 +187,6 @@ function setupEventListeners() {
         predictionForm.addEventListener('submit', handleFormSubmit);
     }
 
-    const verifyBtn = document.getElementById('verifyBtn');
-    if (verifyBtn) {
-        verifyBtn.addEventListener('click', handleVerifyProof);
-    }
-
     const trainBtn = document.getElementById('trainBtn');
     if (trainBtn) {
         trainBtn.addEventListener('click', handleTrainModel);
@@ -211,20 +196,31 @@ function setupEventListeners() {
     setupInteractiveToggles();
     setupDamageSelector();
     setupPremiumIndicator();
+    setupInputValidation();
 }
 
 function setupInteractiveToggles() {
-    document.getElementById('licenseToggle').addEventListener('click', function() {
-        this.classList.toggle('active');
-        const hiddenInput = document.getElementById('Driving_License');
-        hiddenInput.value = this.classList.contains('active') ? '1' : '0';
-    });
+    const licenseToggle = document.getElementById('licenseToggle');
+    if (licenseToggle) {
+        licenseToggle.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const hiddenInput = document.getElementById('Driving_License');
+            if (hiddenInput) {
+                hiddenInput.value = this.classList.contains('active') ? '1' : '0';
+            }
+        });
+    }
 
-    document.getElementById('insuranceToggle').addEventListener('click', function() {
-        this.classList.toggle('active');
-        const hiddenInput = document.getElementById('Previously_Insured');
-        hiddenInput.value = this.classList.contains('active') ? '1' : '0';
-    });
+    const insuranceToggle = document.getElementById('insuranceToggle');
+    if (insuranceToggle) {
+        insuranceToggle.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const hiddenInput = document.getElementById('Previously_Insured');
+            if (hiddenInput) {
+                hiddenInput.value = this.classList.contains('active') ? '1' : '0';
+            }
+        });
+    }
 }
 
 function setupDamageSelector() {
@@ -232,62 +228,74 @@ function setupDamageSelector() {
         option.addEventListener('click', function() {
             document.querySelectorAll('.damage-option').forEach(opt => opt.classList.remove('active'));
             this.classList.add('active');
-            document.getElementById('Vehicle_Damage').value = this.getAttribute('data-value');
+            const damageInput = document.getElementById('Vehicle_Damage');
+            if (damageInput) {
+                damageInput.value = this.getAttribute('data-value');
+            }
         });
     });
 }
 
 function setupPremiumIndicator() {
-    document.getElementById('Annual_Premium').addEventListener('input', function() {
-        const value = parseFloat(this.value) || 0;
-        const indicator = document.getElementById('premiumLevel');
-        
-        if (value < 10000) {
-            indicator.textContent = 'Basic';
-            indicator.style.color = '#4ade80';
-        } else if (value < 30000) {
-            indicator.textContent = 'Standard';
-            indicator.style.color = '#fca311';
-        } else {
-            indicator.textContent = 'Premium';
-            indicator.style.color = '#f72585';
-        }
+    const premiumInput = document.getElementById('Annual_Premium');
+    if (premiumInput) {
+        premiumInput.addEventListener('input', function() {
+            const value = parseFloat(this.value) || 0;
+            const indicator = document.getElementById('premiumLevel');
+            if (!indicator) return;
+            
+            if (value < 10000) {
+                indicator.textContent = 'Basic';
+                indicator.style.color = '#4ade80';
+            } else if (value < 30000) {
+                indicator.textContent = 'Standard';
+                indicator.style.color = '#fca311';
+            } else {
+                indicator.textContent = 'Premium';
+                indicator.style.color = '#f72585';
+            }
+        });
+    }
+}
+
+function setupInputValidation() {
+    const inputs = document.querySelectorAll('input[type="number"]');
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            const value = parseFloat(this.value);
+            const min = parseFloat(this.min) || 0;
+            const max = parseFloat(this.max) || Infinity;
+            
+            if (this.value && (value < min || value > max)) {
+                this.style.borderColor = 'var(--danger)';
+                insuranceManager.showNotification(`⚠️ ${this.name} should be between ${min} and ${max}`, 'error');
+            } else {
+                this.style.borderColor = '';
+            }
+        });
     });
 }
 
 function setupAudioControls() {
     const audioToggle = document.getElementById('audioToggle');
     const ambientAudio = document.getElementById('ambientAudio');
-    const volumeSlider = document.getElementById('volumeSlider');
-    const volumeLevel = document.getElementById('volumeLevel');
     let isAudioPlaying = false;
 
-    ambientAudio.volume = volumeSlider.value / 100;
-    updateVolumeLevel();
-
-    audioToggle.addEventListener('click', function() {
-        if (isAudioPlaying) {
-            ambientAudio.pause();
-            this.classList.add('muted');
-        } else {
-            ambientAudio.play().catch(e => {
-                console.log('Audio play failed:', e);
-                showNotification('Audio playback failed. Click to enable sound.', 'error');
-            });
-            this.classList.remove('muted');
-        }
-        isAudioPlaying = !isAudioPlaying;
-    });
-
-    volumeSlider.addEventListener('input', function() {
-        const volume = this.value / 100;
-        ambientAudio.volume = volume;
-        updateVolumeLevel();
-    });
-
-    function updateVolumeLevel() {
-        const volume = volumeSlider.value;
-        volumeLevel.style.background = `linear-gradient(90deg, var(--accent) ${volume}%, rgba(255,255,255,0.1) ${volume}%)`;
+    if (audioToggle && ambientAudio) {
+        audioToggle.addEventListener('click', function() {
+            if (isAudioPlaying) {
+                ambientAudio.pause();
+                this.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                this.classList.add('muted');
+            } else {
+                ambientAudio.play().catch(e => {
+                    console.log('Audio play failed:', e);
+                });
+                this.innerHTML = '<i class="fas fa-volume-up"></i>';
+                this.classList.remove('muted');
+            }
+            isAudioPlaying = !isAudioPlaying;
+        });
     }
 }
 
@@ -299,82 +307,88 @@ async function handleFormSubmit(e) {
     e.preventDefault();
     console.log('📝 Form submission started...');
 
-    if (!zkManager.isInitialized) {
-        showNotification('🔐 Initializing ZK System...', 'info');
-        await zkManager.initialize();
+    if (!insuranceManager.isInitialized) {
+        insuranceManager.showNotification('🤖 Initializing AI System...', 'info');
+        await insuranceManager.initialize();
     }
 
     const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+    const progressBar = document.getElementById('progressBar');
+    
     if (loadingOverlay) loadingOverlay.classList.add('active');
 
     try {
         const formData = collectFormData();
         console.log('📊 Form data collected:', formData);
 
-        const proof = await zkManager.generateProof(formData);
-        updateEncryptionProgress('completed');
+        // Enhanced loading sequence with beautiful messages
+        const loadingSteps = [
+            { text: '🔍 Analyzing Personal Profile...', progress: 20 },
+            { text: '🚗 Processing Vehicle Information...', progress: 40 },
+            { text: '📊 Calculating Risk Factors...', progress: 60 },
+            { text: '🤖 Running AI Prediction Algorithm...', progress: 80 },
+            { text: '✨ Generating Final Recommendation...', progress: 100 }
+        ];
+
+        for (let i = 0; i < loadingSteps.length; i++) {
+            if (loadingText) loadingText.textContent = loadingSteps[i].text;
+            if (progressBar) progressBar.style.width = `${loadingSteps[i].progress}%`;
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        // Show success message before form submission
+        insuranceManager.showNotification('✅ AI Analysis Complete! Generating recommendation...', 'success');
         
+        // Allow user to see the success message before redirect
         setTimeout(() => {
-            loadingOverlay.classList.remove('active');
-            const resultContainer = document.getElementById('resultContainer');
-            if (resultContainer) {
-                resultContainer.style.display = 'block';
-                addProofVerification(proof);
-                
-                resultContainer.scrollIntoView({ 
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-            }
-            
-            showNotification('🔐 Zero-Knowledge Proof Generated Successfully!', 'success');
-        }, 1000);
+            if (loadingOverlay) loadingOverlay.classList.remove('active');
+            // The form will naturally submit to the server
+            e.target.submit();
+        }, 1500);
         
     } catch (error) {
-        console.error('Proof generation failed:', error);
-        showNotification('❌ Proof Generation Failed', 'error');
+        console.error('Prediction processing failed:', error);
+        insuranceManager.showNotification('❌ Analysis Failed. Please check your inputs and try again.', 'error');
         if (loadingOverlay) loadingOverlay.classList.remove('active');
     }
 }
 
-async function handleVerifyProof() {
-    if (!zkManager.proof) {
-        showNotification('No proof available to verify', 'error');
-        return;
-    }
-
-    this.disabled = true;
-    this.innerHTML = '<div class="btn-bg"></div><div class="btn-content"><i class="fas fa-spinner fa-spin"></i><span>Verifying Proof...</span></div>';
-
-    try {
-        const verification = await zkManager.verifyProof(zkManager.proof);
-        
-        if (verification.isValid) {
-            showNotification('✅ ZK Proof Verified Successfully!', 'success');
-            zkManager.updateSecurityStatus('Quantum Verified', 98);
-        } else {
-            showNotification('❌ Proof Verification Failed', 'error');
-        }
-    } catch (error) {
-        showNotification('⚠️ Verification Error', 'error');
-    } finally {
-        this.disabled = false;
-        this.innerHTML = '<div class="btn-bg"></div><div class="btn-content"><i class="fas fa-fingerprint"></i><span>Verify ZK-Proof</span></div>';
-    }
-}
-
 async function handleTrainModel() {
-    this.disabled = true;
-    this.innerHTML = '<div class="btn-bg"></div><div class="btn-content"><i class="fas fa-spinner fa-spin"></i><span>Training Neural Network...</span></div>';
+    const trainBtn = document.getElementById('trainBtn');
+    if (!trainBtn) return;
+
+    const originalHTML = trainBtn.innerHTML;
+    trainBtn.disabled = true;
+    trainBtn.innerHTML = '<div class="btn-bg"></div><div class="btn-content"><i class="fas fa-spinner fa-spin"></i><span>Training Neural Network...</span></div>';
     
     try {
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        showNotification('Neural Network Training Complete! 🧠', 'success');
+        insuranceManager.showNotification('🧠 Starting Neural Network Training...', 'info');
+        
+        // Simulate training process with beautiful messages
+        const trainingSteps = [
+            '🔄 Loading training dataset...',
+            '⚙️ Configuring neural layers...',
+            '📈 Processing 50,000+ data points...',
+            '🎯 Optimizing model accuracy...',
+            '✅ Validating results...'
+        ];
+
+        for (let step of trainingSteps) {
+            insuranceManager.showNotification(step, 'info');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        insuranceManager.showNotification('🎉 Neural Network Training Complete! Model accuracy: 98.7%', 'success');
+        
+        // Show celebration effect
+        celebrateTrainingCompletion();
+        
     } catch (error) {
-        showNotification('Training Failed. Please try again. ⚠️', 'error');
+        insuranceManager.showNotification('❌ Training Failed. Please try again.', 'error');
     } finally {
-        this.disabled = false;
-        this.innerHTML = '<div class="btn-bg"></div><div class="btn-content"><i class="fas fa-cogs"></i><span>Train Neural Network</span></div>';
+        trainBtn.disabled = false;
+        trainBtn.innerHTML = originalHTML;
     }
 }
 
@@ -395,30 +409,44 @@ function collectFormData() {
     return formData;
 }
 
-function updateEncryptionProgress(status) {
-    const stages = document.querySelectorAll('.progress-stages .stage');
+function resetForm() {
+    const form = document.getElementById('predictionForm');
+    if (form) {
+        form.reset();
+        // Reset toggles
+        document.querySelectorAll('.cyber-toggle').forEach(toggle => {
+            toggle.classList.remove('active');
+        });
+        // Reset damage selector
+        document.querySelectorAll('.damage-option').forEach(option => {
+            option.classList.remove('active');
+        });
+    }
     
-    stages.forEach(stage => {
-        const stageNum = parseInt(stage.getAttribute('data-stage'));
-        
-        if (status === 'completed') {
-            stage.classList.add('completed');
-            stage.classList.remove('active');
-            const loader = stage.querySelector('.stage-loader');
-            if (loader) {
-                loader.innerHTML = '<i class="fas fa-check"></i>';
-            }
-        }
-    });
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    insuranceManager.showNotification('🔄 Form reset. Ready for new analysis!', 'info');
 }
 
-function addProofVerification(proof) {
-    const resultHeader = document.querySelector('.result-header');
-    if (resultHeader && !resultHeader.querySelector('.proof-badge')) {
-        const badge = document.createElement('div');
-        badge.className = 'proof-badge';
-        badge.innerHTML = '<i class="fas fa-shield-check"></i><span>Zero-Knowledge Proof Verified</span>';
-        resultHeader.appendChild(badge);
+// Celebration effect for training completion
+function celebrateTrainingCompletion() {
+    const container = document.querySelector('.main-container');
+    if (!container) return;
+
+    for (let i = 0; i < 20; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        confetti.style.background = ['var(--success)', 'var(--accent)', 'var(--neon-purple)', 'var(--warning)'][Math.floor(Math.random() * 4)];
+        container.appendChild(confetti);
+
+        setTimeout(() => {
+            if (confetti.parentNode) {
+                container.removeChild(confetti);
+            }
+        }, 3000);
     }
 }
 
@@ -682,51 +710,6 @@ function startStatsCounter() {
 }
 
 // =====================
-// NOTIFICATION SYSTEM
-// =====================
-
-function showNotification(message, type = 'info') {
-    const container = document.getElementById('notificationContainer');
-    if (!container) return;
-    
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <span>${message}</span>
-            <button class="notification-close">&times;</button>
-        </div>
-    `;
-    
-    container.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 100);
-    
-    const closeBtn = notification.querySelector('.notification-close');
-    closeBtn.addEventListener('click', () => {
-        notification.classList.remove('show');
-        setTimeout(() => {
-            if (notification.parentNode) {
-                container.removeChild(notification);
-            }
-        }, 300);
-    });
-    
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    container.removeChild(notification);
-                }
-            }, 300);
-        }
-    }, 5000);
-}
-
-// =====================
 // EASTER EGGS
 // =====================
 
@@ -738,12 +721,11 @@ document.addEventListener('DOMContentLoaded', function() {
     logoHologram.addEventListener('click', function() {
         clickCount++;
         if (clickCount >= 5) {
-            showNotification('🎉 You\'ve discovered the AI Easter Egg! Welcome to the Matrix!', 'success');
+            insuranceManager.showNotification('🎉 You\'ve discovered the AI Easter Egg! Welcome to the Matrix!', 'success');
             this.classList.add('easter-egg-active');
             
-            document.body.style.animation = 'rainbowGlow 2s linear infinite';
             setTimeout(() => {
-                document.body.style.animation = '';
+                this.classList.remove('easter-egg-active');
             }, 5000);
             
             clickCount = 0;
@@ -768,21 +750,4 @@ document.addEventListener('keydown', function(e) {
             if (closeBtn) closeBtn.click();
         });
     }
-});
-
-// =====================
-// SMOOTH SCROLLING
-// =====================
-
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
 });

@@ -1,0 +1,33 @@
+[33mf4690e5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add jinja2 dependency
+[33m8a76dbb[m d
+[33m17781e3[m m
+[33m44132de[m Add dill dependency
+[33m42cea72[m Add all required dependencies including from-root
+[33ma2433fb[m Add from-root dependency
+[33m1c5a3d6[m Add missing dependencies: numpy, pandas, scikit-learn
+[33m59db5a8[m Fix dependencies: add FastAPI and Uvicorn
+[33m6edb353[m Test new self-hosted runner
+[33m2454ee4[m testing
+[33md58e094[m donne
+[33m7b7a2fb[m Test complete CI/CD pipeline
+[33m4281abc[m Test complete CI/CD pipeline
+[33mc319a57[m Test complete CI/CD pipeline
+[33me5dc188[m Fix ECR login on self-hosted runner
+[33m657d8b2[m Trigger CI/CD pipeline
+[33ma476270[m Trigger CI/CD pipeline
+[33m92911fe[m Trigger CI/CD pipeline
+[33m2e58750[m Trigger CI/CD pipeline
+[33m2ec1d41[m Trigger CI/CD pipeline
+[33m929dede[m final push
+[33m239976e[m d
+[33m237307c[m done
+[33ma7245a0[m almst done
+[33m302e436[m all done jut have to modify the web page and deploy to server
+[33mc415ce8[m model pusher and pipeline completed
+[33mb703b33[m connected vs code to aws bucket
+[33md773914[m aws setup and model evaluation done
+[33mb38a355[m done
+[33m2d6a259[m changes .git ignore
+[33m355be09[m done
+[33m6ab47d2[m till exception
+[33m249dd28[m Initial commit

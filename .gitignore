@@ -146,6 +146,88 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+artifact/
+logs/
+*.log
+template.py
+demo.py
+notebook/
+.ipynb_checkpoints
+
+# ML and data
+models/
+data/
+*.pkl
+*.joblib
+*.h5
+*.model
+
+# Docker
+.dockerignore
+
+# Temporary files
+*.tmp
+*.temp
+
+# Security
+*.pem
+*.key
+*.crt
+.env
+.env.local
+.secrets
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+cover/
 
 # Spyder project settings
 .spyderproject

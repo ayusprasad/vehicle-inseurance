@@ -1,18 +1,16 @@
-Vehicle Insurance App - EC2 Deployment
-A complete deployment guide for the Vehicle Insurance Prediction application on AWS EC2 with Python 3.11.
+A comprehensive deployment guide for the Vehicle Insurance Prediction application on AWS EC2 with Python 3.11.
 
-🚀 Quick Start Deployment
-Prerequisites
-AWS EC2 Ubuntu 24.04 instance
+## 🚀 Quick Start Deployment
 
-Access to instance via SSH
+### Prerequisites
+- AWS EC2 Ubuntu 24.04 instance
+- SSH access to the instance
+- Git repository access
 
-Git repository access
+### One-Command Deployment
+Copy and execute the following script on your EC2 instance:
 
-One-Command Deployment
-Copy and paste the entire script below into your EC2 instance:
-
-bash
+```bash
 #!/bin/bash
 set -e
 
@@ -20,11 +18,11 @@ echo "=========================================="
 echo "🚀 Vehicle Insurance App Deployment"
 echo "=========================================="
 
-# Update system
+# Update system packages
 echo "📦 Updating system packages..."
 sudo apt update && sudo apt upgrade -y
 
-# Install Python 3.11 and essentials
+# Install Python 3.11 and essential tools
 echo "🐍 Installing Python 3.11..."
 sudo apt install -y software-properties-common
 sudo add-apt-repository -y ppa:deadsnakes/ppa
@@ -38,7 +36,7 @@ rm -rf vehicle-inseurance 2>/dev/null || true
 git clone https://github.com/ayusprasad/vehicle-inseurance.git
 cd vehicle-inseurance
 
-# Create virtual environment with Python 3.11
+# Create Python 3.11 virtual environment
 echo "🔧 Setting up Python 3.11 virtual environment..."
 python3.11 -m venv venv
 source venv/bin/activate
@@ -46,7 +44,7 @@ source venv/bin/activate
 # Upgrade pip
 pip install --upgrade pip setuptools wheel
 
-# Install exact dependencies
+# Install dependencies
 echo "📚 Installing dependencies..."
 pip install \
     fastapi==0.115.0 \
@@ -65,10 +63,10 @@ pip install \
     pytz==2025.1 \
     tzdata==2025.1
 
-# Install additional required packages
+# Install additional packages
 pip install pyyaml boto3 python-dotenv imbalanced-learn
 
-# Create .env file
+# Create environment configuration
 echo "🔐 Creating environment file..."
 cat > .env << 'EOF'
 AWS_ACCESS_KEY_ID=AKIA6ODU6E5Q7YS6A47K
@@ -80,120 +78,114 @@ EOF
 # Export environment variables
 export $(cat .env | xargs)
 
-# Start application
+# Start application server
 echo "🎯 Starting application..."
 nohup uvicorn app:app --host 0.0.0.0 --port 5000 > app.log 2>&1 &
 
-# Wait for startup
+# Wait for application initialization
 echo "⏳ Waiting for application to start..."
 sleep 10
 
-# Check status
+# Verify deployment status
 echo ""
 echo "=========================================="
 echo "✅ DEPLOYMENT COMPLETE!"
 echo "=========================================="
 echo ""
-echo "🌐 Access your app at: http://13.221.130.64:5000"
+echo "🌐 Access your application at: http://13.221.130.64:5000"
 echo ""
 echo "📊 Application Status:"
 ps aux | grep uvicorn | grep -v grep
 echo ""
-echo "📋 Last 30 log lines:"
+echo "📋 Recent application logs:"
 echo "=========================================="
 tail -30 app.log
 echo "=========================================="
-echo ""
-echo "📝 Useful Commands:"
-echo "  View logs: tail -f ~/vehicle-inseurance/app.log"
-echo "  Check status: ps aux | grep uvicorn"
-echo "  Stop app: pkill -f uvicorn"
-echo ""
-echo "🔄 To restart:"
-echo "  cd ~/vehicle-inseurance"
-echo "  source venv/bin/activate"
-echo "  export \$(cat .env | xargs)"
-echo "  nohup uvicorn app:app --host 0.0.0.0 --port 5000 > app.log 2>&1 &"
-echo ""
-📋 After Running the Script
-Wait 10-15 seconds for everything to install and start
+📋 Post-Deployment Verification
+Wait 10-15 seconds for installation and service initialization
 
-Open your browser: http://13.221.130.64:5000
+Access the application: Open your browser to http://13.221.130.64:5000
 
-Test the form - fill it out and click "Predict"
+Test functionality: Complete the form and click "Predict" to verify operation
 
-🔧 Troubleshooting
-If You See ANY Errors After Running
+🔧 Troubleshooting Guide
+Diagnostic Commands
+If you encounter issues after deployment:
+
 bash
-# Check what's happening
+# Check application logs
 cd ~/vehicle-inseurance
 source venv/bin/activate
 tail -50 app.log
 
-# Test Python imports
+# Test Python dependencies
 python3.11 << 'PYEOF'
 import sys
 print(f"Python version: {sys.version}")
 
 try:
     import fastapi
-    print("✅ FastAPI")
+    print("✅ FastAPI - SUCCESS")
 except Exception as e:
-    print(f"❌ FastAPI: {e}")
+    print(f"❌ FastAPI - FAILED: {e}")
 
 try:
     import pandas
-    print("✅ Pandas")
+    print("✅ Pandas - SUCCESS")
 except Exception as e:
-    print(f"❌ Pandas: {e}")
+    print(f"❌ Pandas - FAILED: {e}")
 
 try:
     import app
-    print("✅ App module")
+    print("✅ App module - SUCCESS")
 except Exception as e:
-    print(f"❌ App: {e}")
+    print(f"❌ App module - FAILED: {e}")
 PYEOF
-To Restart After Reboot
+Application Restart Procedure
+After system reboot, restart the application with:
+
 bash
 cd ~/vehicle-inseurance
 source venv/bin/activate
 export $(cat .env | xargs)
 nohup uvicorn app:app --host 0.0.0.0 --port 5000 > app.log 2>&1 &
-🛠️ Key Features
-Python 3.11 specifically installed (not 3.12)
+🛠️ Technical Features
+Python 3.11 specifically installed (compatibility-optimized)
 
-Exact package versions from requirements
+Exact package versioning from requirements
 
-POST method support (app supports both GET and POST on /)
+Dual HTTP method support (GET and POST on /)
 
 PPA installation for Python 3.11 on Ubuntu 24.04
 
-No version conflicts - all packages compatible with Python 3.11
+Version-conflict free package management
 
 📁 Project Structure
 text
 ~/vehicle-inseurance/
 ├── venv/                 # Python 3.11 virtual environment
 ├── app.py               # Main FastAPI application
-├── .env                 # Environment variables
-├── app.log             # Application logs
-└── requirements.txt    # Python dependencies
-🔒 Security Notes
-The application runs on port 5000
+├── .env                 # Environment configuration
+├── app.log             # Application runtime logs
+└── requirements.txt    # Python dependency specification
+🔒 Security Configuration
+Application service runs on port 5000
 
-Ensure EC2 security group allows inbound traffic on port 5000
+EC2 security group must allow inbound traffic on port 5000
 
 Environment variables contain sensitive credentials
 
-Consider using AWS Secrets Manager for production
+Production recommendation: Use AWS Secrets Manager for credential management
 
-📞 Support
-If you encounter any issues:
+📞 Support & Maintenance
+If you encounter deployment issues:
 
-Check the application logs: tail -f ~/vehicle-inseurance/app.log
+Check application logs: tail -f ~/vehicle-inseurance/app.log
 
-Verify Python imports using the troubleshooting script above
+Verify Python imports using the diagnostic script above
 
-Ensure all environment variables are properly set
+Confirm environment variables are properly configured
 
-Note: This deployment uses Python 3.11 specifically to match your local development environment and ensure compatibility with all package versions.
+Note: This deployment specifically uses Python 3.11 to maintain compatibility with your local development environment and ensure package version stability.
+
+text

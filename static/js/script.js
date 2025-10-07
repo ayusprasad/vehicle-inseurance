@@ -32,61 +32,6 @@ class InsuranceIQManager {
         });
     }
 
-    async processPrediction(formData) {
-        if (!this.isInitialized) {
-            throw new Error('AI system not initialized');
-        }
-
-        const steps = [
-            'Analyzing Personal Profile...',
-            'Processing Vehicle Data...', 
-            'Calculating Risk Factors...',
-            'Generating Insurance Score...'
-        ];
-
-        for (let i = 0; i < steps.length; i++) {
-            await this.simulateProcessingStep(steps[i], i);
-        }
-
-        this.currentPrediction = {
-            prediction: Math.random() > 0.5 ? 'high' : 'low',
-            confidence: Math.random() * 30 + 70,
-            factors: this.analyzeFactors(formData),
-            timestamp: Date.now()
-        };
-
-        return this.currentPrediction;
-    }
-
-    async simulateProcessingStep(step, index) {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                const loadingText = document.getElementById('loadingText');
-                if (loadingText) loadingText.textContent = step;
-                
-                const progress = ((index + 1) / 4) * 100;
-                const progressBar = document.getElementById('progressBar');
-                if (progressBar) progressBar.style.width = `${progress}%`;
-                
-                resolve();
-            }, 1200);
-        });
-    }
-
-    analyzeFactors(formData) {
-        const factors = [];
-        if (formData.Vehicle_Damage === 'Yes') factors.push('Vehicle Damage History');
-        if (formData.Age < 25) factors.push('Young Driver');
-        if (formData.Previously_Insured === '0') factors.push('First-time Insured');
-        if (formData.Annual_Premium > 30000) factors.push('High Premium');
-        
-        return factors.length > 0 ? factors : ['Standard Risk Profile'];
-    }
-
-    updateSystemStatus(level, strength) {
-        console.log(`System Status: ${level} - ${strength}%`);
-    }
-
     showNotification(message, type) {
         const container = document.getElementById('notificationContainer');
         if (!container) return;
@@ -178,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // =====================
-// EVENT LISTENERS
+// EVENT LISTENERS - SIMPLIFIED
 // =====================
 
 function setupEventListeners() {
@@ -300,7 +245,7 @@ function setupAudioControls() {
 }
 
 // =====================
-// FORM HANDLING
+// SIMPLIFIED FORM HANDLING
 // =====================
 
 async function handleFormSubmit(e) {
@@ -319,9 +264,6 @@ async function handleFormSubmit(e) {
     if (loadingOverlay) loadingOverlay.classList.add('active');
 
     try {
-        const formData = collectFormData();
-        console.log('📊 Form data collected:', formData);
-
         // Enhanced loading sequence with beautiful messages
         const loadingSteps = [
             { text: '🔍 Analyzing Personal Profile...', progress: 20 },
@@ -340,10 +282,10 @@ async function handleFormSubmit(e) {
         // Show success message before form submission
         insuranceManager.showNotification('✅ AI Analysis Complete! Generating recommendation...', 'success');
         
-        // Allow user to see the success message before redirect
+        // Allow user to see the success message before submitting
         setTimeout(() => {
             if (loadingOverlay) loadingOverlay.classList.remove('active');
-            // The form will naturally submit to the server
+            // DIRECT FORM SUBMISSION - NO MORE METHOD NOT ALLOWED!
             e.target.submit();
         }, 1500);
         
@@ -396,19 +338,6 @@ async function handleTrainModel() {
 // HELPER FUNCTIONS
 // =====================
 
-function collectFormData() {
-    const formData = {};
-    const formElements = document.getElementById('predictionForm').elements;
-    
-    for (let element of formElements) {
-        if (element.name && element.value !== '') {
-            formData[element.name] = element.value;
-        }
-    }
-    
-    return formData;
-}
-
 function resetForm() {
     const form = document.getElementById('predictionForm');
     if (form) {
@@ -451,7 +380,7 @@ function celebrateTrainingCompletion() {
 }
 
 // =====================
-// ANIMATIONS & EFFECTS
+// ANIMATIONS & EFFECTS (Keep your existing animations)
 // =====================
 
 function initializeAnimations() {
@@ -708,46 +637,3 @@ function startStatsCounter() {
         observer.observe(statsContainer);
     }
 }
-
-// =====================
-// EASTER EGGS
-// =====================
-
-document.addEventListener('DOMContentLoaded', function() {
-    const logoHologram = document.querySelector('.logo-hologram');
-    if (!logoHologram) return;
-    
-    let clickCount = 0;
-    logoHologram.addEventListener('click', function() {
-        clickCount++;
-        if (clickCount >= 5) {
-            insuranceManager.showNotification('🎉 You\'ve discovered the AI Easter Egg! Welcome to the Matrix!', 'success');
-            this.classList.add('easter-egg-active');
-            
-            setTimeout(() => {
-                this.classList.remove('easter-egg-active');
-            }, 5000);
-            
-            clickCount = 0;
-        }
-    });
-});
-
-// =====================
-// KEYBOARD SHORTCUTS
-// =====================
-
-document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.key === 'm') {
-        e.preventDefault();
-        const audioToggle = document.getElementById('audioToggle');
-        if (audioToggle) audioToggle.click();
-    }
-    
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.notification.show').forEach(notification => {
-            const closeBtn = notification.querySelector('.notification-close');
-            if (closeBtn) closeBtn.click();
-        });
-    }
-});

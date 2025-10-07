@@ -2,7 +2,7 @@ import os
 import random
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
@@ -12,9 +12,11 @@ APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
 APP_PORT = int(os.getenv("PORT", "5000"))
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
-# Try to import ML modules with comprehensive error handling
-HAS_ML_MODULES = False
+# Global ML availability flag
+ML_AVAILABLE = False
 ML_ERROR = None
+
+print("🔍 Checking for ML modules...")
 
 try:
     from src.constants import APP_HOST as ML_HOST, APP_PORT as ML_PORT
@@ -25,7 +27,7 @@ except ImportError as e:
 try:
     from src.pipline.prediction_pipeline import VehicleData, VehicleDataClassifier
     from src.pipline.training_pipeline import TrainPipeline
-    HAS_ML_MODULES = True
+    ML_AVAILABLE = True
     print("✅ ML modules imported successfully")
 except ImportError as e:
     ML_ERROR = str(e)
@@ -141,41 +143,31 @@ class DataForm:
         except (ValueError, TypeError):
             return default
 
+# ============================================
+# FIXED ROUTES - BOTH GET AND POST FOR ROOT
+# ============================================
+
 @app.get("/", response_class=HTMLResponse)
+@app.post("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """Render the main application page"""
+    """Render the main application page - handles both GET and POST"""
+    
+    # If it's a POST request, process the form
+    if request.method == "POST":
+        return await handle_prediction(request)
+    
+    # If it's a GET request, just render the page
     return templates.TemplateResponse(
         "vehicledata.html",
         {
             "request": request, 
             "context": "Rendering",
-            "ml_available": HAS_ML_MODULES
+            "ml_available": ML_AVAILABLE
         }
     )
 
-@app.get("/train")
-async def train_route():
-    """Endpoint to train the machine learning model"""
-    if not HAS_ML_MODULES:
-        raise HTTPException(
-            status_code=503, 
-            detail="ML modules not available - running in demo mode"
-        )
-    
-    try:
-        train_pipeline = TrainPipeline()
-        train_pipeline.run_pipeline()
-        return {
-            "status": "success",
-            "message": "Training completed successfully!",
-            "model_accuracy": "98.7%"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
-
-@app.post("/predict")
-async def predict_route(request: Request):
-    """Enhanced prediction endpoint with comprehensive error handling"""
+async def handle_prediction(request: Request):
+    """Handle prediction logic for POST requests"""
     try:
         # Process form data
         form = DataForm(request)
@@ -200,8 +192,10 @@ async def predict_route(request: Request):
 
         prediction_result = None
         confidence = 0.0
+        ml_successful = ML_AVAILABLE  # Start with global ML availability
 
-        if HAS_ML_MODULES:
+        # Try ML prediction if available
+        if ML_AVAILABLE:
             try:
                 # Create VehicleData object
                 vehicle_data = VehicleData(**vehicle_data_dict)
@@ -216,13 +210,14 @@ async def predict_route(request: Request):
                 confidence = result.get("confidence", random.uniform(0.85, 0.95) if prediction_result == "Response-Yes" else random.uniform(0.15, 0.35))
                 
                 print(f"🎯 AI Prediction: {prediction_result} (Confidence: {confidence:.2f})")
+                ml_successful = True
                 
             except Exception as e:
                 print(f"❌ ML prediction failed, falling back to demo: {e}")
-                HAS_ML_MODULES = False
+                ml_successful = False  # ML failed for this request
 
         # Fallback to demo mode if ML modules fail or aren't available
-        if not HAS_ML_MODULES or prediction_result is None:
+        if not ML_AVAILABLE or not ml_successful or prediction_result is None:
             # Smart demo mode based on input data
             risk_score = 0
             
@@ -255,23 +250,56 @@ async def predict_route(request: Request):
                 "prediction_data": {
                     "value": 1 if prediction_result == "Response-Yes" else 0,
                     "confidence": confidence,
-                    "mode": "AI" if HAS_ML_MODULES else "Demo"
+                    "mode": "AI" if ml_successful else "Demo"
                 },
-                "ml_available": HAS_ML_MODULES
+                "ml_available": ML_AVAILABLE
             }
         )
 
     except Exception as e:
         print(f"❌ Prediction error: {e}")
+        import traceback
+        traceback.print_exc()
+        
         return templates.TemplateResponse(
             "vehicledata.html",
             {
                 "request": request, 
                 "context": "Error",
                 "error_message": "Our AI system is temporarily unavailable. Please try again in a moment.",
-                "ml_available": HAS_ML_MODULES
+                "ml_available": ML_AVAILABLE
             }
         )
+
+@app.get("/train")
+async def train_route():
+    """Endpoint to train the machine learning model"""
+    if not ML_AVAILABLE:
+        raise HTTPException(
+            status_code=503, 
+            detail="ML modules not available - running in demo mode"
+        )
+    
+    try:
+        train_pipeline = TrainPipeline()
+        train_pipeline.run_pipeline()
+        return {
+            "status": "success",
+            "message": "Training completed successfully!",
+            "model_accuracy": "98.7%"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
+
+@app.get("/predict")
+async def predict_get():
+    """Handle GET requests to /predict - redirect to home"""
+    return RedirectResponse(url="/", status_code=303)
+
+@app.post("/predict")
+async def predict_route(request: Request):
+    """Alternative prediction endpoint"""
+    return await handle_prediction(request)
 
 @app.get("/health")
 async def health_check():
@@ -280,8 +308,8 @@ async def health_check():
         "status": "healthy",
         "service": "InsuranceIQ AI",
         "version": "1.0.0",
-        "ml_available": HAS_ML_MODULES,
-        "ml_error": ML_ERROR if not HAS_ML_MODULES else None,
+        "ml_available": ML_AVAILABLE,
+        "ml_error": ML_ERROR if not ML_AVAILABLE else None,
         "environment": "production"
     }
     
@@ -304,11 +332,17 @@ async def info():
         "version": "1.0.0",
         "description": "AI-Powered Vehicle Insurance Predictor",
         "status": "operational",
-        "ml_mode": "AI" if HAS_ML_MODULES else "Demo",
+        "ml_mode": "AI" if ML_AVAILABLE else "Demo",
         "supported_features": ["insurance_prediction", "risk_assessment"]
     }
 
 if __name__ == "__main__":
+    print(f"🚀 Starting InsuranceIQ AI Server...")
+    print(f"📍 Host: {APP_HOST}")
+    print(f"🔗 Port: {APP_PORT}")
+    print(f"🤖 ML Mode: {'AI' if ML_AVAILABLE else 'Demo'}")
+    print(f"🐛 Debug: {DEBUG}")
+    
     # Run the application
     uvicorn.run(
         "app:app",

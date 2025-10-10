@@ -6,6 +6,7 @@ class InsuranceIQManager {
     constructor() {
         this.isInitialized = false;
         this.currentPrediction = null;
+        this.trainingInterval = null;
     }
 
     async initialize() {
@@ -30,6 +31,61 @@ class InsuranceIQManager {
                 resolve();
             }, 1500);
         });
+    }
+
+    async processPrediction(formData) {
+        if (!this.isInitialized) {
+            throw new Error('AI system not initialized');
+        }
+
+        const steps = [
+            'Analyzing Personal Profile...',
+            'Processing Vehicle Data...', 
+            'Calculating Risk Factors...',
+            'Generating Insurance Score...'
+        ];
+
+        for (let i = 0; i < steps.length; i++) {
+            await this.simulateProcessingStep(steps[i], i);
+        }
+
+        this.currentPrediction = {
+            prediction: Math.random() > 0.5 ? 'high' : 'low',
+            confidence: Math.random() * 30 + 70,
+            factors: this.analyzeFactors(formData),
+            timestamp: Date.now()
+        };
+
+        return this.currentPrediction;
+    }
+
+    async simulateProcessingStep(step, index) {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                const loadingText = document.getElementById('loadingText');
+                if (loadingText) loadingText.textContent = step;
+                
+                const progress = ((index + 1) / 4) * 100;
+                const progressBar = document.getElementById('progressBar');
+                if (progressBar) progressBar.style.width = `${progress}%`;
+                
+                resolve();
+            }, 1200);
+        });
+    }
+
+    analyzeFactors(formData) {
+        const factors = [];
+        if (formData.Vehicle_Damage === 'Yes') factors.push('Vehicle Damage History');
+        if (formData.Age < 25) factors.push('Young Driver');
+        if (formData.Previously_Insured === '0') factors.push('First-time Insured');
+        if (formData.Annual_Premium > 30000) factors.push('High Premium');
+        
+        return factors.length > 0 ? factors : ['Standard Risk Profile'];
+    }
+
+    updateSystemStatus(level, strength) {
+        console.log(`System Status: ${level} - ${strength}%`);
     }
 
     showNotification(message, type) {
@@ -72,6 +128,90 @@ class InsuranceIQManager {
             }
         }, 5000);
     }
+
+    async startTraining() {
+        try {
+            const response = await fetch('/api/train/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success !== false) {
+                this.showNotification('🧠 Neural Network Training Started!', 'info');
+                this.monitorTrainingProgress();
+            } else {
+                this.showNotification('⚠️ ' + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Training start error:', error);
+            this.showNotification('❌ Failed to start training', 'error');
+        }
+    }
+
+    async monitorTrainingProgress() {
+        this.trainingInterval = setInterval(async () => {
+            try {
+                const response = await fetch('/api/train/status');
+                const data = await response.json();
+                
+                if (data.status === 'training') {
+                    this.showTrainingProgress(data);
+                } else if (data.status === 'completed') {
+                    this.showTrainingComplete();
+                    clearInterval(this.trainingInterval);
+                } else if (data.status === 'idle') {
+                    clearInterval(this.trainingInterval);
+                }
+            } catch (error) {
+                console.error('Progress monitoring error:', error);
+                clearInterval(this.trainingInterval);
+            }
+        }, 1000);
+    }
+
+    showTrainingProgress(data) {
+        const message = `Training Progress: ${data.progress}% - ${data.message}`;
+        this.showNotification(message, 'info');
+        
+        // Update any progress indicators if they exist
+        const progressElements = document.querySelectorAll('.training-progress');
+        progressElements.forEach(element => {
+            element.style.width = `${data.progress}%`;
+        });
+    }
+
+    showTrainingComplete() {
+        this.showNotification('✅ Neural Network Training Complete!', 'success');
+        
+        // Celebrate completion with special effects
+        this.celebrateTrainingCompletion();
+    }
+
+    celebrateTrainingCompletion() {
+        // Add some visual celebration
+        const celebration = document.createElement('div');
+        celebration.innerHTML = '🎉🧠✨';
+        celebration.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            z-index: 10000;
+            pointer-events: none;
+            animation: celebrate 2s ease-out forwards;
+        `;
+        
+        document.body.appendChild(celebration);
+        
+        setTimeout(() => {
+            document.body.removeChild(celebration);
+        }, 2000);
+    }
 }
 
 // =====================
@@ -94,7 +234,7 @@ const fortuneMessages = [
 
 const subtitleTexts = [
     "AI-Powered Insurance Prediction",
-    "Machine Learning at Your Service", 
+    "Machine Learning at Your Service",
     "Decode Your Insurance Future",
     "Neural Networks Never Lie",
     "Data Science Meets Destiny"
@@ -123,7 +263,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // =====================
-// EVENT LISTENERS - SIMPLIFIED
+// EVENT LISTENERS
 // =====================
 
 function setupEventListeners() {
@@ -141,7 +281,6 @@ function setupEventListeners() {
     setupInteractiveToggles();
     setupDamageSelector();
     setupPremiumIndicator();
-    setupInputValidation();
 }
 
 function setupInteractiveToggles() {
@@ -203,24 +342,6 @@ function setupPremiumIndicator() {
     }
 }
 
-function setupInputValidation() {
-    const inputs = document.querySelectorAll('input[type="number"]');
-    inputs.forEach(input => {
-        input.addEventListener('blur', function() {
-            const value = parseFloat(this.value);
-            const min = parseFloat(this.min) || 0;
-            const max = parseFloat(this.max) || Infinity;
-            
-            if (this.value && (value < min || value > max)) {
-                this.style.borderColor = 'var(--danger)';
-                insuranceManager.showNotification(`⚠️ ${this.name} should be between ${min} and ${max}`, 'error');
-            } else {
-                this.style.borderColor = '';
-            }
-        });
-    });
-}
-
 function setupAudioControls() {
     const audioToggle = document.getElementById('audioToggle');
     const ambientAudio = document.getElementById('ambientAudio');
@@ -245,7 +366,7 @@ function setupAudioControls() {
 }
 
 // =====================
-// SIMPLIFIED FORM HANDLING
+// FORM HANDLING
 // =====================
 
 async function handleFormSubmit(e) {
@@ -257,41 +378,53 @@ async function handleFormSubmit(e) {
         await insuranceManager.initialize();
     }
 
+    // Show loading overlay
     const loadingOverlay = document.getElementById('loadingOverlay');
-    const loadingText = document.getElementById('loadingText');
-    const progressBar = document.getElementById('progressBar');
-    
-    if (loadingOverlay) loadingOverlay.classList.add('active');
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('active');
+        
+        // Reset progress bar
+        const progressBar = document.getElementById('progressBar');
+        if (progressBar) progressBar.style.width = '0%';
+    }
 
     try {
-        // Enhanced loading sequence with beautiful messages
-        const loadingSteps = [
-            { text: '🔍 Analyzing Personal Profile...', progress: 20 },
-            { text: '🚗 Processing Vehicle Information...', progress: 40 },
-            { text: '📊 Calculating Risk Factors...', progress: 60 },
-            { text: '🤖 Running AI Prediction Algorithm...', progress: 80 },
-            { text: '✨ Generating Final Recommendation...', progress: 100 }
-        ];
+        const formData = collectFormData();
+        console.log('📊 Form data collected:', formData);
 
-        for (let i = 0; i < loadingSteps.length; i++) {
-            if (loadingText) loadingText.textContent = loadingSteps[i].text;
-            if (progressBar) progressBar.style.width = `${loadingSteps[i].progress}%`;
-            await new Promise(resolve => setTimeout(resolve, 800));
-        }
-
-        // Show success message before form submission
-        insuranceManager.showNotification('✅ AI Analysis Complete! Generating recommendation...', 'success');
+        // Show processing steps
+        await insuranceManager.processPrediction(formData);
         
-        // Allow user to see the success message before submitting
-        setTimeout(() => {
+        // Now submit the form via AJAX for better UX
+        const response = await fetch('/', {
+            method: 'POST',
+            body: new FormData(e.target)
+        });
+        
+        if (response.ok) {
+            const html = await response.text();
+            
+            // Hide loading overlay
             if (loadingOverlay) loadingOverlay.classList.remove('active');
-            // DIRECT FORM SUBMISSION - NO MORE METHOD NOT ALLOWED!
-            e.target.submit();
-        }, 1500);
+            
+            // Update the page with new content
+            document.open();
+            document.write(html);
+            document.close();
+            
+            // Reinitialize everything
+            setTimeout(() => {
+                setupEventListeners();
+                initializeAnimations();
+            }, 100);
+            
+        } else {
+            throw new Error('Server response not OK');
+        }
         
     } catch (error) {
         console.error('Prediction processing failed:', error);
-        insuranceManager.showNotification('❌ Analysis Failed. Please check your inputs and try again.', 'error');
+        insuranceManager.showNotification('❌ Prediction Processing Failed', 'error');
         if (loadingOverlay) loadingOverlay.classList.remove('active');
     }
 }
@@ -300,37 +433,27 @@ async function handleTrainModel() {
     const trainBtn = document.getElementById('trainBtn');
     if (!trainBtn) return;
 
-    const originalHTML = trainBtn.innerHTML;
+    // Disable button and show loading state
     trainBtn.disabled = true;
-    trainBtn.innerHTML = '<div class="btn-bg"></div><div class="btn-content"><i class="fas fa-spinner fa-spin"></i><span>Training Neural Network...</span></div>';
+    const originalContent = trainBtn.innerHTML;
+    
+    trainBtn.innerHTML = `
+        <div class="btn-bg"></div>
+        <div class="btn-content">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Training Neural Network...</span>
+        </div>
+    `;
     
     try {
-        insuranceManager.showNotification('🧠 Starting Neural Network Training...', 'info');
-        
-        // Simulate training process with beautiful messages
-        const trainingSteps = [
-            '🔄 Loading training dataset...',
-            '⚙️ Configuring neural layers...',
-            '📈 Processing 50,000+ data points...',
-            '🎯 Optimizing model accuracy...',
-            '✅ Validating results...'
-        ];
-
-        for (let step of trainingSteps) {
-            insuranceManager.showNotification(step, 'info');
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-
-        insuranceManager.showNotification('🎉 Neural Network Training Complete! Model accuracy: 98.7%', 'success');
-        
-        // Show celebration effect
-        celebrateTrainingCompletion();
-        
+        await insuranceManager.startTraining();
     } catch (error) {
+        console.error('Training error:', error);
         insuranceManager.showNotification('❌ Training Failed. Please try again.', 'error');
     } finally {
+        // Restore button
         trainBtn.disabled = false;
-        trainBtn.innerHTML = originalHTML;
+        trainBtn.innerHTML = originalContent;
     }
 }
 
@@ -338,49 +461,21 @@ async function handleTrainModel() {
 // HELPER FUNCTIONS
 // =====================
 
-function resetForm() {
-    const form = document.getElementById('predictionForm');
-    if (form) {
-        form.reset();
-        // Reset toggles
-        document.querySelectorAll('.cyber-toggle').forEach(toggle => {
-            toggle.classList.remove('active');
-        });
-        // Reset damage selector
-        document.querySelectorAll('.damage-option').forEach(option => {
-            option.classList.remove('active');
-        });
+function collectFormData() {
+    const formData = {};
+    const formElements = document.getElementById('predictionForm').elements;
+    
+    for (let element of formElements) {
+        if (element.name && element.value !== '') {
+            formData[element.name] = element.value;
+        }
     }
     
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    insuranceManager.showNotification('🔄 Form reset. Ready for new analysis!', 'info');
-}
-
-// Celebration effect for training completion
-function celebrateTrainingCompletion() {
-    const container = document.querySelector('.main-container');
-    if (!container) return;
-
-    for (let i = 0; i < 20; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti';
-        confetti.style.left = Math.random() * 100 + '%';
-        confetti.style.animationDelay = Math.random() * 2 + 's';
-        confetti.style.background = ['var(--success)', 'var(--accent)', 'var(--neon-purple)', 'var(--warning)'][Math.floor(Math.random() * 4)];
-        container.appendChild(confetti);
-
-        setTimeout(() => {
-            if (confetti.parentNode) {
-                container.removeChild(confetti);
-            }
-        }, 3000);
-    }
+    return formData;
 }
 
 // =====================
-// ANIMATIONS & EFFECTS (Keep your existing animations)
+// ANIMATIONS & EFFECTS
 // =====================
 
 function initializeAnimations() {
@@ -637,3 +732,72 @@ function startStatsCounter() {
         observer.observe(statsContainer);
     }
 }
+
+// =====================
+// EASTER EGGS
+// =====================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const logoHologram = document.querySelector('.logo-hologram');
+    if (!logoHologram) return;
+    
+    let clickCount = 0;
+    logoHologram.addEventListener('click', function() {
+        clickCount++;
+        if (clickCount >= 5) {
+            insuranceManager.showNotification('🎉 You\'ve discovered the AI Easter Egg! Welcome to the Matrix!', 'success');
+            this.classList.add('easter-egg-active');
+            
+            setTimeout(() => {
+                this.classList.remove('easter-egg-active');
+            }, 5000);
+            
+            clickCount = 0;
+        }
+    });
+});
+
+// =====================
+// KEYBOARD SHORTCUTS
+// =====================
+
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'm') {
+        e.preventDefault();
+        const audioToggle = document.getElementById('audioToggle');
+        if (audioToggle) audioToggle.click();
+    }
+    
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.notification.show').forEach(notification => {
+            const closeBtn = notification.querySelector('.notification-close');
+            if (closeBtn) closeBtn.click();
+        });
+    }
+});
+
+// =====================
+// ADDITIONAL STYLES FOR CELEBRATION
+// =====================
+
+const celebrationStyles = `
+@keyframes celebrate {
+    0% {
+        transform: translate(-50%, -50%) scale(0) rotate(0deg);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.5) rotate(180deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1) rotate(360deg);
+        opacity: 0;
+    }
+}
+`;
+
+// Add celebration styles to document
+const styleSheet = document.createElement('style');
+styleSheet.textContent = celebrationStyles;
+document.head.appendChild(styleSheet);

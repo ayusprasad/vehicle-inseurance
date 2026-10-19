@@ -6,7 +6,6 @@ from fastapi.templating import Jinja2Templates
 import uvicorn
 import json
 import time
-import threading
 from functools import lru_cache
 
 # Enhanced caching and performance
@@ -20,7 +19,6 @@ try:
     from src.pipline.prediction_pipeline import VehicleData, VehicleDataClassifier
     HAS_ML_MODULES = True
 except ImportError:
-    print("ML modules are unavailable; prediction endpoints will return a service-unavailable response.")
     HAS_ML_MODULES = False
 
 # Initialize FastAPI application with performance optimizations
@@ -33,7 +31,6 @@ app = FastAPI(
 # Performance optimizations
 PREDICTION_CACHE = {}
 MODEL_CACHE = None
-TRAINING_THREAD = None
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -52,12 +49,9 @@ app.add_middleware(
 
 # Global variables for training progress
 training_progress = {
-    "status": "idle",
+    "status": "not_started",
     "progress": 0,
-    "message": "Ready to train",
-    "logs": [],
-    "speed": "⚡ Instant",
-    "performance": "99.9% accuracy"
+    "message": "Training is available through the project pipeline, not this API.",
 }
 
 class DataForm:
@@ -95,18 +89,8 @@ class DataForm:
             self.cache_key = hash(str(data))
             return data
             
-        except Exception as e:
-            print(f"Form data processing error: {e}")
-            return self._get_default_data()
-
-    def _get_default_data(self):
-        """Ultra-fast default data provider"""
-        return {
-            "Gender": "Male", "Age": 25, "Driving_License": 1,
-            "Region_Code": 28.0, "Previously_Insured": 0, "Annual_Premium": 2630.0,
-            "Policy_Sales_Channel": 26.0, "Vintage": 217, "Vehicle_Age": "< 1 Year",
-            "Vehicle_Damage": "Yes"
-        }
+        except Exception as error:
+            raise ValueError("Could not process submitted form data.") from error
 
     def _safe_str(self, value, default):
         """Micro-optimized string conversion"""
@@ -155,7 +139,7 @@ async def index(request: Request):
     """
     return templates.TemplateResponse(
         "vehicledata.html",
-        {"request": request, "context": "Rendering", "speed": "⚡ Instant"}
+        {"request": request, "context": "Ready"}
     )
 
 @app.get("/api/health")
@@ -171,7 +155,7 @@ async def health_check():
 
 @app.get("/api/train/status")
 async def get_training_status():
-    """Lightning-fast training status"""
+    """Return the current API training status."""
     return JSONResponse(training_progress)
 
 @app.post("/api/train/start")
@@ -246,12 +230,13 @@ async def predict_route(request: Request):
         )
 
     try:
+        start_time = time.perf_counter()
         form = DataForm(request)
         form_data = await form.get_vehicle_data()
         result = VehicleDataClassifier().predict(VehicleData(**form_data))
         prediction_value = result.get("prediction")
         status = "Response-Yes" if prediction_value == 1 else "Response-No"
-        response_time = (time.time() - request.state.started_at) * 1000 if hasattr(request.state, "started_at") else 0.0
+        response_time = (time.perf_counter() - start_time) * 1000
         return templates.TemplateResponse(
             "vehicledata.html",
             {

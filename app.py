@@ -1,19 +1,12 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
 import json
 import time
-import random
-from typing import Dict, Any, Optional
-import asyncio
-from pydantic import BaseModel
 import threading
-from concurrent.futures import ThreadPoolExecutor
-import joblib
-import numpy as np
 from functools import lru_cache
 
 # Enhanced caching and performance
@@ -25,11 +18,9 @@ except ImportError:
 
 try:
     from src.pipline.prediction_pipeline import VehicleData, VehicleDataClassifier
-    from src.pipline.training_pipeline import TrainPipeline
     HAS_ML_MODULES = True
-except ImportError as e:
-    print(f"ML modules import warning: {e}")
-    print("Running in demo mode without ML functionality")
+except ImportError:
+    print("ML modules are unavailable; prediction endpoints will return a service-unavailable response.")
     HAS_ML_MODULES = False
 
 # Initialize FastAPI application with performance optimizations
@@ -125,8 +116,10 @@ class DataForm:
         """Ultra-fast integer conversion"""
         try:
             num = int(float(value))
-            if min_val is not None and num < min_val: return min_val
-            if max_val is not None and num > max_val: return max_val
+            if min_val is not None and num < min_val:
+                return min_val
+            if max_val is not None and num > max_val:
+                return max_val
             return num
         except (ValueError, TypeError):
             return default
@@ -167,15 +160,14 @@ async def index(request: Request):
 
 @app.get("/api/health")
 async def health_check():
-    """Ultra-fast health check"""
-    return JSONResponse({
-        "status": "ok", 
-        "service": "Vehicle Insurance Prediction API", 
-        "ml_available": HAS_ML_MODULES,
-        "version": "3.0.0",
-        "performance": "99.9% uptime",
-        "speed": "⚡ Instant responses"
-    })
+    return JSONResponse(
+        {
+            "status": "ok",
+            "service": "vehicle-insurance-api",
+            "ml_available": HAS_ML_MODULES,
+            "version": "1.0.0",
+        }
+    )
 
 @app.get("/api/train/status")
 async def get_training_status():
@@ -184,232 +176,124 @@ async def get_training_status():
 
 @app.post("/api/train/start")
 async def start_training():
-    """⚡ Lightning-speed model training"""
-    global training_progress, TRAINING_THREAD
-    
-    if training_progress["status"] == "training":
-        return JSONResponse({
-            "error": "Training already at light speed!",
-            "status": training_progress
-        }, status_code=400)
-    
-    training_progress = {
-        "status": "training",
-        "progress": 0,
-        "message": "⚡ Initializing lightning-speed training...",
-        "logs": ["🚀 Starting hyper-optimized training pipeline"],
-        "speed": "⚡ Light Speed",
-    }
-    
-    # Start ultra-fast training in background
-    TRAINING_THREAD = threading.Thread(target=ultra_fast_training, daemon=True)
-    TRAINING_THREAD.start()
-    
-    return JSONResponse({
-        "message": "⚡ Lightning training initiated!",
-        "status": training_progress,
-        "estimated_completion": "10 seconds"
-    })
-
-def ultra_fast_training():
-    """⚡ Ultra-optimized training process"""
-    global training_progress
-    
-    # Hyper-optimized training steps
-    training_steps = [
-        {"progress": 15, "message": "⚡ Loading data at light speed...", "log": "Data loaded in 0.2s"},
-        {"progress": 30, "message": "🚀 Preprocessing with AI acceleration...", "log": "Features optimized in 0.3s"},
-        {"progress": 45, "message": "💫 Training neural network...", "log": "Epoch 1: loss=0.4321, accuracy=0.9123"},
-        {"progress": 60, "message": "⚡ Optimizing model parameters...", "log": "Model optimized with 99.1% accuracy"},
-        {"progress": 75, "message": "🚀 Validating predictions...", "log": "Validation accuracy: 98.7%"},
-        {"progress": 90, "message": "💫 Saving ultra-fast model...", "log": "Model saved with lightning serialization"},
-        {"progress": 100, "message": "🎉 Training completed at light speed!", "log": "⚡ Total time: 8.2 seconds"}
-    ]
-    
-    for step in training_steps:
-        training_progress.update(step)
-        training_progress["logs"].append(step["log"])
-        time.sleep(0.8)  # Ultra-fast steps
-    
-    training_progress.update({
-        "status": "completed",
-        "speed": "⚡ Light Speed Achieved",
-        "performance": "99.2% prediction accuracy"
-    })
+    return JSONResponse(
+        {
+            "error": "Training is not exposed by this API. Run the project training pipeline locally.",
+            "training_available": False,
+        },
+        status_code=501,
+    )
 
 @app.post("/api/predict")
 async def predict_api(request: Request):
-    """⚡ Lightning-fast prediction endpoint"""
-    start_time = time.time()
-    
+    if not HAS_ML_MODULES:
+        return JSONResponse(
+            {"success": False, "error": "Prediction modules are unavailable."},
+            status_code=503,
+        )
+
     try:
-        # Ultra-fast JSON parsing
         data = await request.json()
-        cache_key = str(hash(json.dumps(data, sort_keys=True)))
-        
-        # Check cache first (lightning fast)
-        cached_result = get_cached_prediction(cache_key)
-        if cached_result:
-            cached_result["cached"] = True
-            cached_result["response_time"] = f"{(time.time() - start_time)*1000:.2f}ms ⚡"
-            return JSONResponse(cached_result)
-        
-        if HAS_ML_MODULES:
-            try:
-                # Hyper-optimized prediction
-                vehicle_data = VehicleData(
-                    Gender=data.get("Gender", "Male"),
-                    Age=int(data.get("Age", 25)),
-                    Driving_License=int(data.get("Driving_License", 1)),
-                    Region_Code=float(data.get("Region_Code", 28.0)),
-                    Previously_Insured=int(data.get("Previously_Insured", 0)),
-                    Vehicle_Age=data.get("Vehicle_Age", "< 1 Year"),
-                    Vehicle_Damage=1 if data.get("Vehicle_Damage", "Yes") == "Yes" else 0,
-                    Annual_Premium=float(data.get("Annual_Premium", 2630.0)),
-                    Policy_Sales_Channel=float(data.get("Policy_Sales_Channel", 26.0)),
-                    Vintage=int(data.get("Vintage", 217))
-                )
-
-                model_predictor = VehicleDataClassifier()
-                result = model_predictor.predict(vehicle_data)
-                
-                prediction_value = result.get("prediction", 0)
-                confidence = result.get("confidence", 0.85)
-                
-                response_data = {
-                    "success": True,
-                    "prediction": prediction_value,
-                    "confidence": confidence,
-                    "message": "⚡ Lightning-fast prediction generated!",
-                    "status": "Response-Yes" if prediction_value == 1 else "Response-No",
-                    "response_time": f"{(time.time() - start_time)*1000:.2f}ms ⚡",
-                    "speed_grade": "Lightning Fast" if (time.time() - start_time) < 0.1 else "Fast"
-                }
-                
-                # Cache the result
-                set_cached_prediction(cache_key, response_data)
-                return JSONResponse(response_data)
-                
-            except Exception as ml_error:
-                print(f"ML prediction error: {ml_error}")
-                # Fall back to ultra-fast demo mode
-                return await ultra_fast_demo_prediction(start_time, cache_key)
-        else:
-            return await ultra_fast_demo_prediction(start_time, cache_key)
-
-    except Exception as e:
-        print(f"Prediction error: {e}")
-        return JSONResponse({
-            "success": False,
-            "error": str(e),
-            "message": "Prediction failed but system is ultra-fast!",
-            "response_time": f"{(time.time() - start_time)*1000:.2f}ms"
-        }, status_code=500)
-
-async def ultra_fast_demo_prediction(start_time: float, cache_key: str):
-    """⚡ Ultra-fast demo prediction generator"""
-    prediction_value = 1 if random.random() > 0.4 else 0
-    confidence = random.random() * 25 + 75  # Higher confidence for demo
-    
-    response_data = {
-        "success": True,
-        "prediction": prediction_value,
-        "confidence": confidence,
-        "message": "⚡ Lightning demo prediction generated!",
-        "status": "Response-Yes" if prediction_value == 1 else "Response-No",
-        "demo": True,
-        "response_time": f"{(time.time() - start_time)*1000:.1f}ms ⚡",
-        "speed_grade": "Lightning Fast"
-    }
-    
-    set_cached_prediction(cache_key, response_data)
-    return JSONResponse(response_data)
+        required = {
+            "Gender",
+            "Age",
+            "Driving_License",
+            "Region_Code",
+            "Previously_Insured",
+            "Vehicle_Age",
+            "Vehicle_Damage",
+            "Annual_Premium",
+            "Policy_Sales_Channel",
+            "Vintage",
+        }
+        missing = sorted(required.difference(data))
+        if missing:
+            return JSONResponse(
+                {"success": False, "error": f"Missing fields: {', '.join(missing)}"},
+                status_code=422,
+            )
+        vehicle_data = VehicleData(
+            Gender=data["Gender"],
+            Age=int(data["Age"]),
+            Driving_License=int(data["Driving_License"]),
+            Region_Code=float(data["Region_Code"]),
+            Previously_Insured=int(data["Previously_Insured"]),
+            Vehicle_Age=data["Vehicle_Age"],
+            Vehicle_Damage=1 if data["Vehicle_Damage"] == "Yes" else 0,
+            Annual_Premium=float(data["Annual_Premium"]),
+            Policy_Sales_Channel=float(data["Policy_Sales_Channel"]),
+            Vintage=int(data["Vintage"]),
+        )
+        result = VehicleDataClassifier().predict(vehicle_data)
+        return JSONResponse({"success": True, **result})
+    except (TypeError, ValueError) as error:
+        return JSONResponse(
+            {"success": False, "error": f"Invalid prediction input: {error}"},
+            status_code=422,
+        )
+    except Exception:
+        return JSONResponse(
+            {"success": False, "error": "Prediction is unavailable. Verify model artifacts and server logs."},
+            status_code=503,
+        )
 
 @app.post("/")
 async def predict_route(request: Request):
-    """⚡ Lightning-fast form prediction endpoint"""
-    start_time = time.time()
-    
+    if not HAS_ML_MODULES:
+        return HTMLResponse(
+            "Prediction is unavailable because the model pipeline could not be loaded.",
+            status_code=503,
+        )
+
     try:
-        # Ultra-fast form processing
         form = DataForm(request)
         form_data = await form.get_vehicle_data()
-        
-        # Generate cache key
-        cache_key = form.cache_key or str(hash(str(form_data)))
-        
-        if HAS_ML_MODULES:
-            # Create VehicleData object with ultra-fast conversion
-            vehicle_data = VehicleData(**form_data)
-            
-            # Make prediction
-            model_predictor = VehicleDataClassifier()
-            result = model_predictor.predict(vehicle_data)
-            
-            prediction_value = result.get("prediction", 0)
-            status = "Response-Yes" if prediction_value == 1 else "Response-No"
-        else:
-            # Ultra-fast demo mode
-            prediction_value = 1 if random.random() > 0.4 else 0
-            status = "Response-Yes" if prediction_value == 1 else "Response-No"
-
-        # Lightning-fast template response
-        response_time = (time.time() - start_time) * 1000
-        
+        result = VehicleDataClassifier().predict(VehicleData(**form_data))
+        prediction_value = result.get("prediction")
+        status = "Response-Yes" if prediction_value == 1 else "Response-No"
+        response_time = (time.time() - request.state.started_at) * 1000 if hasattr(request.state, "started_at") else 0.0
         return templates.TemplateResponse(
             "vehicledata.html",
             {
-                "request": request, 
+                "request": request,
                 "context": status,
                 "prediction_data": {
                     "value": prediction_value,
-                    "confidence": 0.89 if status == "Response-Yes" else 0.24,
+                    "confidence": result.get("confidence"),
                     "response_time": f"{response_time:.1f}ms",
-                    "speed": "⚡ Lightning Fast" if response_time < 100 else "🚀 Fast"
+                    "speed": "Measured",
                 },
-                "speed_metrics": {
-                    "response_time": f"{response_time:.1f}ms",
-                    "grade": "⚡ Lightning" if response_time < 50 else "🚀 Fast"
-                }
+                "speed_metrics": {"response_time": f"{response_time:.1f}ms", "grade": "Measured"},
             },
         )
-
-    except Exception as e:
-        print(f"Prediction error: {e}")
+    except (TypeError, ValueError) as error:
         return templates.TemplateResponse(
             "vehicledata.html",
-            {
-                "request": request, 
-                "context": "Error",
-                "error_message": f"Error but system is still ultra-fast! {str(e)}"
-            },
+            {"request": request, "context": "Invalid input", "error_message": str(error)},
+            status_code=422,
+        )
+    except Exception:
+        return HTMLResponse(
+            "Prediction is unavailable. Verify model artifacts and server logs.",
+            status_code=503,
         )
 
 @app.get("/train")
 async def train_route():
-    """Legacy training endpoint - redirect to new ultra-fast version"""
-    return JSONResponse({
-        "message": "⚡ Use /api/train/start for lightning-speed training!",
-        "new_endpoint": "/api/train/start",
-        "speed": "10x faster than before"
-    })
+    return JSONResponse(
+        {"error": "Training is not exposed by this API.", "training_available": False},
+        status_code=501,
+    )
 
-# Performance monitoring endpoint
 @app.get("/api/performance")
 async def performance_stats():
-    """Ultra-fast performance metrics"""
-    return JSONResponse({
-        "status": "⚡ Lightning Mode Active",
-        "cache_size": len(PREDICTION_CACHE),
-        "performance": "99.9% uptime",
-        "average_response_time": "< 50ms",
-        "features": [
-            "⚡ Instant predictions",
-            "🚀 Lightning training",
-            "💫 Smart caching",
-            "🎯 99.2% accuracy"
-        ]
-    })
+    return JSONResponse(
+        {
+            "status": "ok",
+            "model_available": HAS_ML_MODULES,
+            "prediction_cache_entries": len(PREDICTION_CACHE),
+        }
+    )
 
 if __name__ == "__main__":
     # Ultra-fast server configuration
@@ -418,6 +302,6 @@ if __name__ == "__main__":
         host=APP_HOST, 
         port=APP_PORT, 
         reload=True,
-        workers=4,  # Multi-worker for extreme performance
-        access_log=False  # Disable logs for maximum speed
+        workers=1,
+        access_log=True
     )

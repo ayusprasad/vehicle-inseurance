@@ -10,7 +10,7 @@ def test_health_endpoint_reports_service_status() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["service"] == "Vehicle Insurance Prediction API"
+    assert body["service"] == "vehicle-insurance-api"
     assert isinstance(body["ml_available"], bool)
 
 

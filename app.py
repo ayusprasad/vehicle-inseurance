@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
-import json
+import os
 import time
 from functools import lru_cache
 
@@ -41,10 +41,14 @@ templates = Jinja2Templates(directory='templates')
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        origin.strip()
+        for origin in os.getenv("CORS_ALLOW_ORIGINS", "http://127.0.0.1:5000").split(",")
+        if origin.strip()
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 # Global variables for training progress
@@ -112,8 +116,10 @@ class DataForm:
         """Ultra-fast float conversion"""
         try:
             num = float(value)
-            if min_val is not None and num < min_val: return min_val
-            if max_val is not None and num > max_val: return max_val
+            if min_val is not None and num < min_val:
+                return min_val
+            if max_val is not None and num > max_val:
+                return max_val
             return num
         except (ValueError, TypeError):
             return default

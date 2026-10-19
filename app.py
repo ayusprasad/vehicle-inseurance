@@ -169,8 +169,8 @@ async def index(request: Request):
 async def health_check():
     """Ultra-fast health check"""
     return JSONResponse({
-        "status": "⚡ Super Healthy", 
-        "service": "InsuranceIQ AI - Lightning Edition", 
+        "status": "ok", 
+        "service": "Vehicle Insurance Prediction API", 
         "ml_available": HAS_ML_MODULES,
         "version": "3.0.0",
         "performance": "99.9% uptime",
@@ -199,7 +199,6 @@ async def start_training():
         "message": "⚡ Initializing lightning-speed training...",
         "logs": ["🚀 Starting hyper-optimized training pipeline"],
         "speed": "⚡ Light Speed",
-        "performance": "99.9% accuracy guaranteed"
     }
     
     # Start ultra-fast training in background
